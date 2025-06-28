@@ -1,21 +1,27 @@
 import os
 import json
+import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, ContextTypes, filters
 )
-from telegram.constants import ChatType
 
-# === Config ===
-ADMINS = [6672752177]  # Replace with your Telegram user ID(s)
-ALLOWED_GROUP_IDS = [-1002172782993]  # Optional: group chat ID(s)
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")  # set this in Render
+# === Configuration ===
+ADMINS = [123456789]  # Replace with your Telegram user ID(s)
+ALLOWED_GROUP_IDS = [-1002172782993]  # Optional: group chat IDs (or leave empty)
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 DATA_FILE = "messages.json"
 if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
         json.dump({}, f)
+
+# === Logging Configuration ===
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 
 def load_messages():
@@ -28,7 +34,7 @@ def save_messages(messages):
         json.dump(messages, f, indent=2)
 
 
-# === Day Message Handler ===
+# === View Day Command ===
 async def day_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     day = update.message.text.strip("/").split("@")[0].lower()
     messages = load_messages()
@@ -48,7 +54,7 @@ async def day_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ No message saved for this day yet.")
 
 
-# === Add Message Handler ===
+# === Add Day Command ===
 async def add_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id not in ADMINS:
@@ -84,7 +90,7 @@ async def add_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"✅ Message for *{day.capitalize()}* saved!", parse_mode="Markdown")
 
 
-# === Delete Handler ===
+# === Delete Day Command ===
 async def delete_day_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id not in ADMINS:
@@ -106,7 +112,7 @@ async def delete_day_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(f"ℹ️ No saved message for *{day.capitalize()}*.")
 
 
-# === Clear All Handler ===
+# === Clear All Command ===
 async def clear_all_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id not in ADMINS:
@@ -115,7 +121,7 @@ async def clear_all_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🧹 All messages cleared.")
 
 
-# === Admin Check Command (Optional) ===
+# === Admin Check Command ===
 async def admin_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     is_admin = user_id in ADMINS
@@ -126,24 +132,29 @@ async def admin_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    # Register daily view commands
+    # View handlers
     for day in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]:
         app.add_handler(CommandHandler(day, day_handler))
 
-    # Register add commands
+    # Add handlers
     for cmd in ["addmon", "addtue", "addwed", "addthu", "addfri", "addsat", "addsun"]:
         app.add_handler(CommandHandler(cmd, add_handler, filters=filters.REPLY))
 
-    # Admin-only commands
+    # Admin-only handlers
     app.add_handler(CommandHandler("delete", delete_day_handler))
     app.add_handler(CommandHandler("clear", clear_all_handler))
     app.add_handler(CommandHandler("admin", admin_check))
 
-    print("🤖 Bot is running...")
+    logger.info("🤖 Bot started.")
     await app.run_polling()
 
 
+# === Entry Point ===
 if __name__ == "__main__":
     import asyncio
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    try:
+        asyncio.run(main())
+    except RuntimeError:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(main())
+    
