@@ -7,8 +7,8 @@ from telegram.ext import (
 from telegram.constants import ChatType
 
 # === Config ===
-ADMINS = [123456789]  # Replace with your Telegram user ID(s)
-# ALLOWED_GROUP_IDS = [-1001234567890]  # Optional: group chat ID(s)
+ADMINS = [6672752177]  # Replace with your Telegram user ID(s)
+ ALLOWED_GROUP_IDS = [-1002172782993]  # Optional: group chat ID(s)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")  # set this in Render
 
